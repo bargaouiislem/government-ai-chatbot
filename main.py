@@ -57,14 +57,26 @@ model = SentenceTransformer(
 
 print("Creating embeddings...")
 
-embeddings = model.encode(documents, show_progress_bar=True)
+embeddings = model.encode(
+    documents,
+    batch_size=16,
+    show_progress_bar=True,
+    normalize_embeddings=True
+)
 
 
 # ==================================
 
 
 with open("embeddings.pkl", "wb") as f:
-    pickle.dump((combined_df, embeddings), f)
+    pickle.dump(
+        {
+            "dataframe": combined_df,
+            "documents": documents,
+            "embeddings": embeddings
+        },
+        f
+    )
 
 print("✅ ALL TABLES EMBEDDED SUCCESSFULLY!")
 

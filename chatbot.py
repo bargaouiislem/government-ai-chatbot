@@ -12,17 +12,22 @@ model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniL
 # Load saved data
 # =========================
 with open("embeddings.pkl", "rb") as f:
-    df, embeddings = pickle.load(f)
+    data = pickle.load(f)
+
+    df = data["dataframe"]
+    embeddings = data["embeddings"]
+    documents = data["documents"]
 
 # =========================
 # Search function
 # =========================
 def search(query, top_k=3):
-    query_embedding = model.encode([query])[0]
+    query_embedding = model.encode(
+    [query],
+    normalize_embeddings=True
+    )[0]
 
-    similarities = np.dot(embeddings, query_embedding) / (
-        np.linalg.norm(embeddings, axis=1) * np.linalg.norm(query_embedding)
-    )
+    similarities = np.dot(embeddings, query_embedding)
 
     top_indices = np.argsort(similarities)[-top_k:][::-1]
 
@@ -39,30 +44,38 @@ def search(query, top_k=3):
 # LLaMA function
 # =========================
 def ask_llama(context, question):
-    # Split context into chunks
-    chunk_size = 1000  # characters per chunk
-    chunks = [context[i:i + chunk_size] for i in range(0, len(context), chunk_size)]
+    # تقسيم النص إلى أجزاء صغيرة
+    chunk_size = 1200
+    chunks = [
+        context[i:i + chunk_size]
+        for i in range(0, len(context), chunk_size)
+    ]
 
     partial_answers = []
 
     for chunk in chunks:
         prompt = f"""
-أجب باللغة العربية الرسمية.
+أنت مساعد إداري تونسي.
 
-اعتمد فقط على المعطيات التالية.
-أجب بجزء من الإجابة فقط بناءً على هذا الجزء.
+أجب فقط اعتماداً على المعلومات التالية.
+إذا لم تجد الإجابة قل: لا توجد معلومات كافية.
 
-المعطيات:
+المعلومات:
 {chunk}
 
 السؤال:
 {question}
+
+الإجابة:
 """
 
         try:
             response = ollama.chat(
                 model="llama3",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                options={
+                    "temperature": 0.2
+                }
             )
 
             partial_answers.append(response["message"]["content"])
@@ -108,8 +121,8 @@ while True:
     results = search(query)
 
     # Clean context (remove NaN and empty values)
-    context = "\n".join(
-        [str(x) for x in results.values.flatten() if str(x) != "nan" and str(x).strip() != ""]
+    context = "\n\n".join(
+    [documents[i] for i in results.index]
     )
 
     # Ask model
