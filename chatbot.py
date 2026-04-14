@@ -71,7 +71,7 @@ def ask_llama(context, question):
 
         try:
             response = ollama.chat(
-                model="llama3",
+                model="llama3:8b",
                 messages=[{"role": "user", "content": prompt}],
                 options={
                     "temperature": 0.2
@@ -91,7 +91,7 @@ def ask_llama(context, question):
 """
 
     final_response = ollama.chat(
-        model="llama3",
+        model="llama3:8b",
         messages=[{"role": "user", "content": final_prompt}]
     )
 
