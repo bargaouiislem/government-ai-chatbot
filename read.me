@@ -1,0 +1,28 @@
+# 🐳 Tunisian Chatbot (Docker + Ollama)
+
+This project is a chatbot powered by **Ollama (LLaMA 3 8B)** and runs fully inside **Docker**.
+
+It supports interactive terminal chat in Arabic/Tunisian dialect.
+
+---
+
+## 🚀 Run with Docker
+
+### ✅ 1) Start Docker containers
+
+Run the following command to build and start everything:
+
+```bash
+docker compose up --build
+
+### ✅ 2) Pull the model inside container
+After containers are running, open a new terminal and run:
+
+```bash
+docker exec -it ollama ollama pull llama3:8b
+
+### ✅ 3) Run chatbot interactively
+Because the app uses input(), you must attach to the container:
+
+```bash
+docker attach tunisian-chatbot

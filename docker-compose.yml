@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  chatbot:
+    build: .
+    container_name: tunisian-chatbot
+    stdin_open: true
+    tty: true
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - .:/app
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+volumes:
+  ollama_models:

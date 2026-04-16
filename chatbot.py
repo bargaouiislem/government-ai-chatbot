@@ -1,7 +1,11 @@
 import pickle
 import numpy as np
 from sentence_transformers import SentenceTransformer
-import ollama
+import os
+from ollama import Client
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+client = Client(host=OLLAMA_HOST)
 
 # =========================
 # LOAD MODELS & DATA
@@ -61,7 +65,6 @@ def search(query, top_k=2, threshold=0.3):
 # =========================
 def ask_llama(context, question):
     chunk_size = 600
-
     context = context[:2000]
 
     chunks = [
@@ -87,7 +90,7 @@ def ask_llama(context, question):
 """
 
         try:
-            response = ollama.chat(
+            response = client.chat(
                 model="llama3:8b",
                 messages=[{"role": "user", "content": prompt}],
                 options={"temperature": 0.1}
