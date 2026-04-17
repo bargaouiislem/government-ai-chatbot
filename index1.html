@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وزارة التجارة وتنمية الصادرات - المساعد الآلي</title>
+    <style>
+        /* ============================================
+           CSS VARIABLES & RESET
+           ============================================ */
+        :root {
+            --primary-dark: #6B0F2B;
+            --primary: #8B1538;
+            --primary-light: #A52245;
+            --gold: #C5A55A;
+            --gold-light: #D4B96E;
+            --gold-dark: #B8943F;
+            --white: #FFFFFF;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Cairo', 'Tajawal', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        /* ============================================
+           DEMO PAGE BACKGROUND (remove in production)
+           ============================================ */
+        .demo-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .demo-page p {
+            color: var(--gray-400);
+            font-size: 18px;
+            text-align: center;
+        }
+
+        /* ============================================
+           FLOATING ACTION BUTTON (FAB)
+           ============================================ */
+        .chatbot-fab {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 65px;
+            height: 65px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: 3px solid var(--gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-xl), 0 0 0 0 rgba(139, 21, 56, 0.4);
+            transition: all var(--transition-normal);
+            z-index: 9998;
+            animation: fab-pulse 3s ease-in-out infinite;
+        }
+
+        .chatbot-fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-2xl), 0 0 0 0 rgba(139, 21, 56, 0.4);
+        }
+
+        .chatbot-fab:active {
+            transform: scale(0.95);
+        }
+
+        .chatbot-fab .fab-icon {
+            width: 32px;
+            height: 32px;
+            transition: all var(--transition-normal);
+        }
+
+        .chatbot-fab .fab-icon.chat-icon {
+            display: block;
+        }
+
+        .chatbot-fab .fab-icon.close-icon {
+            display: none;
+        }
+
+        .chatbot-fab.active .fab-icon.chat-icon {
+            display: none;
+        }
+
+        .chatbot-fab.active .fab-icon.close-icon {
+            display: block;
+        }
+
+        @keyframes fab-pulse {
+            0%, 100% {
+                box-shadow: var(--shadow-xl), 0 0 0 0 rgba(139, 21, 56, 0.4);
+            }
+            50% {
+                box-shadow: var(--shadow-xl), 0 0 0 12px rgba(139, 21, 56, 0);
+            }
+        }
+
+        .chatbot-fab.active {
+            animation: none;
+        }
+
+        /* Notification badge */
+        .fab-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            background: var(--gold);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            border: 2px solid var(--white);
+            animation: badge-bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes badge-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .chatbot-fab.active .fab-badge {
+            display: none;
+        }
+
+        /* Tooltip */
+        .fab-tooltip {
+            position: absolute;
+            right: calc(100% + 15px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--gray-800);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all var(--transition-normal);
+            direction: rtl;
+        }
+
+        .fab-tooltip::after {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 6px solid transparent;
+            border-right-color: var(--gray-800);
+        }
+
+        .chatbot-fab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .chatbot-fab.active .fab-tooltip {
+            display: none;
+        }
+
+        /* ============================================
+           CHAT WINDOW
+           ============================================ */
+        .chatbot-window {
+            position: fixed;
+            bottom: 110px;
+            left: 30px;
+            width: 400px;
+            height: 580px;
+            max-height: calc(100vh - 150px);
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-2xl);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transform-origin: bottom left;
+            transition: all var(--transition-slow);
+        }
+
+        .chatbot-window.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .chat-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+        }
+
+        .header-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            border: 2px solid var(--gold);
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .header-title {
+            color: var(--white);
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 2px;
+        }
+
+        .header-subtitle {
+            color: var(--gold-light);
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: #34D399;
+            border-radius: var(--radius-full);
+            animation: status-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes status-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .header-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: rgba(255,255,255,0.12);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            color: var(--white);
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .header-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ============================================
+           QUICK ACTIONS BAR
+           ============================================ */
+        .quick-actions {
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            flex-shrink: 0;
+            scrollbar-width: none;
+        }
+
+        .quick-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-btn {
+            padding: 6px 14px;
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all var(--transition-fast);
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .quick-btn:hover {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================
+           MESSAGES AREA
+           ============================================ */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+            background: var(--white);
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: var(--radius-full);
+        }
+
+        /* Message wrapper */
+        .message {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            animation: message-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes message-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1.5px solid var(--gray-200);
+        }
+
+        .message.bot .message-avatar {
+            background: var(--primary);
+            border-color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.bot .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, var(--gray-200), var(--gray-300));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-content {
+            max-width: 78%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            font-size: 13.5px;
+            line-height: 1.7;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-bubble {
+            background: var(--gray-100);
+            border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
+            color: var(--gray-800);
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            border-radius: var(--radius-lg) 4px var(--radius-lg) var(--radius-lg);
+        }
+
+        .message-time {
+            font-size: 10px;
+            color: var(--gray-400);
+            padding: 0 4px;
+        }
+
+        .message.user .message-time {
+            text-align: left;
+        }
+
+        .message.bot .message-time {
+            text-align: right;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            animation: message-in 0.3s ease-out;
+        }
+
+        .typing-bubble {
+            background: var(--gray-100);
+            border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--gray-400);
+            border-radius: var(--radius-full);
+            animation: typing-bounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); background: var(--gray-400); }
+            30% { transform: translateY(-8px); background: var(--primary); }
+        }
+
+        /* Welcome message */
+        .welcome-section {
+            text-align: center;
+            padding: 10px 0 5px;
+        }
+
+        .welcome-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            margin: 0 auto 12px;
+            border: 2px solid var(--gold);
+            overflow: hidden;
+            background: var(--white);
+        }
+
+        .welcome-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .welcome-text {
+            font-size: 14px;
+            color: var(--gray-600);
+            line-height: 1.8;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .welcome-text strong {
+            color: var(--primary);
+            display: block;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        /* Date divider */
+        .date-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px 0;
+        }
+
+        .date-divider::before,
+        .date-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .date-divider span {
+            font-size: 11px;
+            color: var(--gray-400);
+            white-space: nowrap;
+        }
+
+        /* ============================================
+           INPUT AREA
+           ============================================ */
+        .chat-input-area {
+            padding: 14px 16px;
+            background: var(--white);
+            border-top: 1px solid var(--gray-200);
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 4px 4px 4px 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: var(--gray-800);
+            direction: rtl;
+            font-family: inherit;
+            padding: 10px 0;
+            line-height: 1.4;
+        }
+
+        .chat-input::placeholder {
+            color: var(--gray-400);
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn svg {
+            width: 18px;
+            height: 18px;
+            color: var(--white);
+            transform: rotate(180deg);
+        }
+
+        .input-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 8px;
+        }
+
+        .input-footer span {
+            font-size: 10px;
+            color: var(--gray-400);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 480px) {
+            .chatbot-window {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 80px);
+                max-height: calc(100vh - 80px);
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                border-radius: var(--radius-lg);
+            }
+
+            .chatbot-fab {
+                bottom: 20px;
+                left: 20px;
+                width: 58px;
+                height: 58px;
+            }
+
+            .chatbot-window.open ~ .chatbot-fab {
+                display: none;
+            }
+        }
+
+        /* ============================================
+           MESSAGE LINK STYLES
+           ============================================ */
+        .message-bubble a {
+            color: var(--gold);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .message.user .message-bubble a {
+            color: var(--gold-light);
+        }
+
+        /* Suggested responses */
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .suggestion-chip {
+            padding: 6px 12px;
+            background: var(--white);
+            border: 1.5px solid var(--primary);
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: inherit;
+        }
+
+        .suggestion-chip:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        /* ============================================
+           POWERED BY FOOTER
+           ============================================ */
+        .powered-by {
+            text-align: center;
+            padding: 6px;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-100);
+            flex-shrink: 0;
+        }
+
+        .powered-by span {
+            font-size: 10px;
+            color: var(--gray-400);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Demo page content (remove in production) -->
+    <div class="demo-page">
+        <p>محتوى الموقع الرئيسي - وزارة التجارة وتنمية الصادرات</p>
+    </div>
+
+    <!-- ============================================
+         FLOATING ACTION BUTTON
+         ============================================ -->
+    <div class="chatbot-fab" id="chatbotFab" onclick="toggleChat()">
+        <!-- Chat icon -->
+        <svg class="fab-icon chat-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="9" y1="10" x2="15" y2="10"/>
+            <line x1="12" y1="7" x2="12" y2="13"/>
+        </svg>
+        <!-- Close icon -->
+        <svg class="fab-icon close-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        <!-- Badge -->
+        <div class="fab-badge">1</div>
+        <!-- Tooltip -->
+        <div class="fab-tooltip">كيف يمكنني مساعدتك؟ 👋</div>
+    </div>
+
+    <!-- ============================================
+         CHAT WINDOW
+         ============================================ -->
+    <div class="chatbot-window" id="chatbotWindow">
+
+        <!-- HEADER -->
+        <div class="chat-header">
+            <div class="header-avatar">
+                <img src="logo.png" alt="شعار الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+            </div>
+            <div class="header-info">
+                <div class="header-title">وزارة التجارة وتنمية الصادرات</div>
+                <div class="header-subtitle">
+                    <span class="status-dot"></span>
+                    المساعد الآلي • متصل الآن
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="clearChat()" title="محادثة جديدة">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                </button>
+                <button class="header-btn" onclick="toggleChat()" title="إغلاق">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="sendQuickMessage('ما هي خدمات الوزارة؟')">🏢 خدمات الوزارة</button>
+            <button class="quick-btn" onclick="sendQuickMessage('كيف أسجل شركة تجارية؟')">📋 تسجيل شركة</button>
+            <button class="quick-btn" onclick="sendQuickMessage('ما هي شروط التصدير؟')">📦 شروط التصدير</button>
+            <button class="quick-btn" onclick="sendQuickMessage('كيف أتواصل مع الوزارة؟')">📞 اتصل بنا</button>
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-logo">
+                    <img src="logo.png" alt="شعار الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+                </div>
+                <div class="welcome-text">
+                    <strong>مرحباً بكم 👋</strong>
+                    أنا المساعد الآلي لوزارة التجارة وتنمية الصادرات. كيف يمكنني مساعدتك اليوم؟
+                </div>
+            </div>
+
+            <!-- Date divider -->
+            <div class="date-divider">
+                <span>اليوم</span>
+            </div>
+
+            <!-- Bot welcome message -->
+            <div class="message bot">
+                <div class="message-avatar">
+                    <img src="logo.png" alt="الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        أهلاً وسهلاً بك! 🇹🇳 أنا هنا لمساعدتك في الاستفسارات المتعلقة بالتجارة وتنمية الصادرات. يمكنك اختيار أحد الخيارات أعلاه أو كتابة سؤالك مباشرة.
+                    </div>
+                    <div class="message-time" id="welcomeTime"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INPUT AREA -->
+        <div class="chat-input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="اكتب سؤالك هنا..."
+                    autocomplete="off"
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="input-footer">
+                <span>⌨️ اضغط Enter للإرسال</span>
+            </div>
+        </div>
+
+        <!-- POWERED BY -->
+        <div class="powered-by">
+            <span>🤖 مدعوم بالذكاء الاصطناعي • وزارة التجارة وتنمية الصادرات</span>
+        </div>
+    </div>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API_URL = 'YOUR_CHATBOT_API_ENDPOINT'; // <-- Replace with your API endpoint
+
+        // ============================================
+        // STATE
+        // ============================================
+        let isOpen = false;
+        let isTyping = false;
+
+        // ============================================
+        // INIT
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set welcome time
+            document.getElementById('welcomeTime').textContent = getCurrentTime();
+
+            // Input listener for send button state
+            const input = document.getElementById('chatInput');
+            input.addEventListener('input', () => {
+                document.getElementById('sendBtn').disabled = !input.value.trim();
+            });
+        });
+
+        // ============================================
+        // TOGGLE CHAT
+        // ============================================
+        function toggleChat() {
+            isOpen = !isOpen;
+            const window = document.getElementById('chatbotWindow');
+            const fab = document.getElementById('chatbotFab');
+
+            if (isOpen) {
+                window.classList.add('open');
+                fab.classList.add('active');
+                document.getElementById('chatInput').focus();
+            } else {
+                window.classList.remove('open');
+                fab.classList.remove('active');
+            }
+        }
+
+        // ============================================
+        // SEND MESSAGE
+        // ============================================
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+
+            if (!text || isTyping) return;
+
+            // Add user message
+            addMessage(text, 'user');
+            input.value = '';
+            document.getElementById('sendBtn').disabled = true;
+
+            // Show typing indicator
+            showTyping();
+
+            // Call API
+            callChatbotAPI(text);
+        }
+
+        function sendQuickMessage(text) {
+            if (isTyping) return;
+
+            // Add user message
+            addMessage(text, 'user');
+
+            // Show typing
+            showTyping();
+
+            // Call API
+            callChatbotAPI(text);
+        }
+
+        // ============================================
+        // API CALL
+        // ============================================
+        async function callChatbotAPI(userMessage) {
+            try {
+                // ===================================
+                // REPLACE THIS WITH YOUR ACTUAL API CALL
+                // ===================================
+
+                // Example using fetch:
+                /*
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userMessage,
+                        // Add any other parameters your API needs
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+                addMessage(data.response, 'bot'); // Adjust based on your API response structure
+                */
+
+                // ===================================
+                // DEMO: Simulated response (REMOVE IN PRODUCTION)
+                // ===================================
+                setTimeout(() => {
+                    hideTyping();
+                    const demoResponses = {
+                        'ما هي خدمات الوزارة؟': 'تقدم وزارة التجارة وتنمية الصادرات العديد من الخدمات من بينها:\n\n🔹 تسجيل المؤسسات التجارية\n🔹 إصدار رخص التصدير والاستيراد\n🔹 حماية المستهلك\n🔹 مراقبة الأسواق والأسعار\n🔹 دعم وتنمية الصادرات\n🔹 الإحصائيات التجارية\n\nهل تريد معرفة المزيد عن خدمة معينة؟',
+                        'كيف أسجل شركة تجارية؟': 'لتسجيل شركة تجارية، يجب اتباع الخطوات التالية:\n\n1️⃣ تحضير الوثائق المطلوبة (بطاقة التعريف، عقد الإيجار، ...)\n2️⃣ التوجه إلى المركز الجهوي للسجل التجاري\n3️⃣ ملء استمارة التسجيل\n4️⃣ دفع الرسوم المطلوبة\n5️⃣ استلام شهادة التسجيل\n\n📞 للمزيد من المعلومات: 71 350 200',
+                        'ما هي شروط التصدير؟': 'شروط التصدير تشمل:\n\n📋 الحصول على السجل التجاري\n📋 التسجيل في منظومة التجارة الخارجية\n📋 احترام معايير الجودة المطلوبة\n📋 الحصول على شهادات المطابقة\n📋 احترام الاتفاقيات التجارية الدولية\n\nيمكنك زيارة موقعنا الإلكتروني للاطلاع على التفاصيل.',
+                        'كيف أتواصل مع الوزارة؟': 'يمكنكم التواصل معنا عبر:\n\n📍 العنوان: شارع الهادي نويرة - 1001 تونس\n📞 الهاتف: 71 350 200\n📠 الفاكس: 71 354 044\n📧 البريد الإلكتروني: contact@commerce.gov.tn\n🌐 الموقع: www.commerce.gov.tn\n\n🕐 أوقات العمل: من الإثنين إلى الجمعة (8:30 - 17:30)'
+                    };
+
+                    const response = demoResponses[userMessage] ||
+                        'شكراً لسؤالك. سأبحث عن المعلومات المطلوبة وأعود إليك في أقرب وقت. يمكنك أيضاً الاتصال بنا على الرقم 71 350 200 للحصول على مساعدة فورية.';
+
+                    addMessage(response, 'bot');
+                }, 1500 + Math.random() * 1000);
+
+            } catch (error) {
+                hideTyping();
+                addMessage('عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى أو الاتصال بنا على الرقم 71 350 200.', 'bot');
+                console.error('Chatbot API Error:', error);
+            }
+        }
+
+        // ============================================
+        // ADD MESSAGE TO DOM
+        // ============================================
+        function addMessage(text, sender) {
+            const container = document.getElementById('chatMessages');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            // Format text (preserve line breaks)
+            const formattedText = text.replace(/\n/g, '<br>');
+
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">
+                        <img src="logo.png" alt="الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">${formattedText}</div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">${formattedText}</div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                `;
+            }
+
+            container.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // ============================================
+        // TYPING INDICATOR
+        // ============================================
+        function showTyping() {
+            isTyping = true;
+            const container = document.getElementById('chatMessages');
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar" style="width:32px;height:32px;border-radius:9999px;overflow:hidden;border:1.5px solid var(--gold);background:var(--primary);display:flex;align-items:center;justify-content:center;">
+                    <img src="logo.png" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🏛️'">
+                </div>
+                <div class="typing-bubble">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+
+            container.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            isTyping = false;
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        // ============================================
+        // CLEAR CHAT
+        // ============================================
+        function clearChat() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = `
+                <div class="welcome-section">
+                    <div class="welcome-logo">
+                        <img src="logo.png" alt="شعار الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+                    </div>
+                    <div class="welcome-text">
+                        <strong>مرحباً بكم 👋</strong>
+                        أنا المساعد الآلي لوزارة التجارة وتنمية الصادرات. كيف يمكنني مساعدتك اليوم؟
+                    </div>
+                </div>
+                <div class="date-divider"><span>اليوم</span></div>
+                <div class="message bot">
+                    <div class="message-avatar">
+                        <img src="logo.png" alt="الوزارة" onerror="this.parentElement.innerHTML='🏛️'">
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            أهلاً وسهلاً بك! 🇹🇳 أنا هنا لمساعدتك في الاستفسارات المتعلقة بالتجارة وتنمية الصادرات. يمكنك اختيار أحد الخيارات أعلاه أو كتابة سؤالك مباشرة.
+                        </div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('ar-TN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+    </script>
+
+</body>
+</html>
