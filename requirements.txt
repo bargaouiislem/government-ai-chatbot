@@ -1,6 +1,10 @@
 pandas
 numpy
-sentence-transformers
 ollama
+sentence-transformers
 torch
 scikit-learn
+fastapi
+uvicorn[standard]
+python-multipart
+openpyxl      

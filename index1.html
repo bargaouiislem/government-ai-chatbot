@@ -900,7 +900,7 @@
         // ============================================
         // CONFIGURATION
         // ============================================
-        const API_URL = 'YOUR_CHATBOT_API_ENDPOINT'; // <-- Replace with your API endpoint
+        const API_URL = 'http://localhost:8000/chat';
 
         // ============================================
         // STATE
@@ -979,49 +979,25 @@
         // ============================================
         async function callChatbotAPI(userMessage) {
             try {
-                // ===================================
-                // REPLACE THIS WITH YOUR ACTUAL API CALL
-                // ===================================
-
-                // Example using fetch:
-                /*
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        message: userMessage,
-                        // Add any other parameters your API needs
-                    })
+                    body: JSON.stringify({ message: userMessage })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
 
                 const data = await response.json();
                 hideTyping();
-                addMessage(data.response, 'bot'); // Adjust based on your API response structure
-                */
-
-                // ===================================
-                // DEMO: Simulated response (REMOVE IN PRODUCTION)
-                // ===================================
-                setTimeout(() => {
-                    hideTyping();
-                    const demoResponses = {
-                        'ما هي خدمات الوزارة؟': 'تقدم وزارة التجارة وتنمية الصادرات العديد من الخدمات من بينها:\n\n🔹 تسجيل المؤسسات التجارية\n🔹 إصدار رخص التصدير والاستيراد\n🔹 حماية المستهلك\n🔹 مراقبة الأسواق والأسعار\n🔹 دعم وتنمية الصادرات\n🔹 الإحصائيات التجارية\n\nهل تريد معرفة المزيد عن خدمة معينة؟',
-                        'كيف أسجل شركة تجارية؟': 'لتسجيل شركة تجارية، يجب اتباع الخطوات التالية:\n\n1️⃣ تحضير الوثائق المطلوبة (بطاقة التعريف، عقد الإيجار، ...)\n2️⃣ التوجه إلى المركز الجهوي للسجل التجاري\n3️⃣ ملء استمارة التسجيل\n4️⃣ دفع الرسوم المطلوبة\n5️⃣ استلام شهادة التسجيل\n\n📞 للمزيد من المعلومات: 71 350 200',
-                        'ما هي شروط التصدير؟': 'شروط التصدير تشمل:\n\n📋 الحصول على السجل التجاري\n📋 التسجيل في منظومة التجارة الخارجية\n📋 احترام معايير الجودة المطلوبة\n📋 الحصول على شهادات المطابقة\n📋 احترام الاتفاقيات التجارية الدولية\n\nيمكنك زيارة موقعنا الإلكتروني للاطلاع على التفاصيل.',
-                        'كيف أتواصل مع الوزارة؟': 'يمكنكم التواصل معنا عبر:\n\n📍 العنوان: شارع الهادي نويرة - 1001 تونس\n📞 الهاتف: 71 350 200\n📠 الفاكس: 71 354 044\n📧 البريد الإلكتروني: contact@commerce.gov.tn\n🌐 الموقع: www.commerce.gov.tn\n\n🕐 أوقات العمل: من الإثنين إلى الجمعة (8:30 - 17:30)'
-                    };
-
-                    const response = demoResponses[userMessage] ||
-                        'شكراً لسؤالك. سأبحث عن المعلومات المطلوبة وأعود إليك في أقرب وقت. يمكنك أيضاً الاتصال بنا على الرقم 71 350 200 للحصول على مساعدة فورية.';
-
-                    addMessage(response, 'bot');
-                }, 1500 + Math.random() * 1000);
+                addMessage(data.response, 'bot');
 
             } catch (error) {
                 hideTyping();
-                addMessage('عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى أو الاتصال بنا على الرقم 71 350 200.', 'bot');
+                addMessage('عذراً، حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.', 'bot');
                 console.error('Chatbot API Error:', error);
             }
         }

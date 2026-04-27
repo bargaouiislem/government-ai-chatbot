@@ -6,79 +6,75 @@ from sentence_transformers import SentenceTransformer
 # LOAD ALL TABLES
 # ==================================
 
-excel_path = r"C:\Users\assma\OneDrive\Bureau\chatbot_project\data.xlsx"
+excel_path = "data.xlsx"
+excel = pd.ExcelFile(excel_path)  # FIX: was missing this line
 
-print("Reading Excel file...")
+all_documents = []  # list of dicts with text + metadata
 
-excel = pd.ExcelFile(excel_path)
-
-all_tables = []
-
-# read ALL sheets automatically
 for sheet in excel.sheet_names:
     print("Reading table:", sheet)
-
-    df = pd.read_excel(excel, sheet_name=sheet)
-
+    df = pd.read_excel(excel, sheet_name=sheet, header=0)  # row 0 = headers
     df = df.fillna("").astype(str)
-    df["source_table"] = sheet
 
-    all_tables.append(df)
+    # Get column names (these are the "questions"/field labels)
+    columns = df.columns.tolist()
 
-# merge everything
-combined_df = pd.concat(all_tables, ignore_index=True)
+    # For each row (which is one record/answer set), build a rich text document
+    for _, row in df.iterrows():
+        parts = []
+        for col in columns:
+            val = str(row[col]).strip()
+            if val and val not in ("nan", ""):
+                parts.append(f"{col}: {val}")
 
-print("Total rows:", len(combined_df))
+        if parts:
+            text = " | ".join(parts)
+            all_documents.append({
+                "text": text,
+                "source_table": sheet,
+                "procedure": str(row.get("التسمية_القانونية_بالعربية", "")).strip()
+            })
 
+print(f"Total documents: {len(all_documents)}")
+if all_documents:
+    print("Example document:")
+    print(all_documents[0]["text"])
 
 # ==================================
-#  CONVERT ROWS TO TEXT
-# ==================================
-
-documents = []
-
-for _, row in combined_df.iterrows():
-    text = " | ".join(map(str, row.values))
-    documents.append(text)
-
-print("Example document:")
-print(documents[0])
-
-
-# ==================================
-#  CREATE EMBEDDINGS
+# CREATE EMBEDDINGS
 # ==================================
 
 print("Loading embedding model...")
-
 model = SentenceTransformer(
     "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
 
-print("Creating embeddings...")
+texts = [doc["text"] for doc in all_documents]
 
+print("Creating embeddings...")
 embeddings = model.encode(
-    documents,
+    texts,
     batch_size=16,
     show_progress_bar=True,
     normalize_embeddings=True
 )
 
-
 # ==================================
-
+# SAVE
+# ==================================
 
 with open("embeddings.pkl", "wb") as f:
     pickle.dump(
         {
-            "dataframe": combined_df,
-            "documents": documents,
+            "documents": all_documents,   # list of dicts (text + metadata)
+            "texts": texts,               # plain text list for easy access
             "embeddings": embeddings
         },
         f
     )
 
 print("✅ ALL TABLES EMBEDDED SUCCESSFULLY!")
+print(f"📊 Total embedded documents: {len(all_documents)}")
 
 
 
