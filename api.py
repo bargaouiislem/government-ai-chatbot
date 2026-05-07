@@ -22,7 +22,7 @@ texts = []
 embeddings = None
 
 # =========================
-# STARTUP EVENT
+# STARTUP
 # =========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,9 +76,6 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="/app"), name="static")
 
-# =========================
-# MODELS
-# =========================
 class ChatRequest(BaseModel):
     message: str
 
@@ -89,7 +86,7 @@ class ChatResponse(BaseModel):
 # =========================
 # SEARCH
 # =========================
-def search(query: str, top_k: int = 5, threshold: float = 0.25):
+def search(query: str, top_k: int = 8, threshold: float = 0.20):
     if model is None or embeddings is None:
         return []
 
@@ -102,7 +99,7 @@ def search(query: str, top_k: int = 5, threshold: float = 0.25):
     if not filtered:
         best_idx = int(np.argmax(similarities))
         best_score = float(similarities[best_idx])
-        if best_score > 0.15:
+        if best_score > 0.12:
             return [(best_idx, best_score)]
         return []
 
@@ -112,46 +109,79 @@ def search(query: str, top_k: int = 5, threshold: float = 0.25):
 # BUILD CONTEXT
 # =========================
 def build_context(filtered_results):
+    seen_procedures = set()
     parts = []
     sources = []
+
+    # Priority: full procedure documents first
     for idx, score in filtered_results:
         doc = all_docs[idx]
-        src = doc.get("source_table", "")
+        proc = doc.get("procedure", "")
+        section = doc.get("section", "")
         text = doc.get("text", texts[idx])
-        parts.append(f"[مصدر: {src}]\n{text}")
-        if src and src not in sources:
-            sources.append(src)
+
+        if section == "كل المعلومات" and proc not in seen_procedures:
+            seen_procedures.add(proc)
+            parts.append(f"=== معلومات كاملة عن إجراء: {proc} ===\n{text}")
+            if proc not in sources:
+                sources.append(proc)
+
+    # Then add section docs for uncovered procedures
+    for idx, score in filtered_results:
+        doc = all_docs[idx]
+        proc = doc.get("procedure", "")
+        section = doc.get("section", "")
+        text = doc.get("text", texts[idx])
+
+        if section not in ("كل المعلومات", "سؤال وجواب") and proc not in seen_procedures:
+            seen_procedures.add(proc)
+            parts.append(f"=== {proc} - {section} ===\n{text}")
+            if proc not in sources:
+                sources.append(proc)
+
+    # Fallback
+    if not parts and filtered_results:
+        idx, score = filtered_results[0]
+        doc = all_docs[idx]
+        parts.append(doc.get("text", texts[idx]))
+        sources.append(doc.get("procedure", ""))
+
     return "\n\n---\n\n".join(parts), sources
 
 # =========================
 # ASK LLAMA
 # =========================
 def ask_llama(context: str, question: str) -> str:
-    context = context[:4000]
+    context = context[:6000]
+
     prompt = f"""أنت مساعد إداري متخصص في خدمات وزارة التجارة وتنمية الصادرات التونسية.
 
-مهمتك: الإجابة على سؤال المواطن بناءً فقط على المعلومات المقدمة أدناه.
+مهمتك الوحيدة: الإجابة على سؤال المواطن بالعربية فقط، بناءً حصراً على المعلومات المقدمة أدناه.
 
-⚠️ قواعد مهمة:
-- أجب بالعربية فقط
-- استخدم فقط المعلومات المذكورة في السياق
-- إذا لم تجد الجواب في السياق، قل: "لا توجد معلومات كافية حول هذا الموضوع"
-- لا تخترع أو تخمّن أي معلومة
-- كن واضحاً ومنظماً في إجابتك
+قواعد صارمة يجب احترامها:
+١. أجب بالعربية فقط — لا تستخدم أي لغة أخرى إطلاقاً (لا فرنسية، لا إنجليزية، لا صينية)
+٢. استخدم فقط المعلومات الموجودة في السياق أدناه
+٣. إذا لم تجد المعلومة في السياق، قل فقط: "لا توجد معلومات كافية حول هذا الموضوع"
+٤. لا تخترع أي معلومة ولا تخمّن
+٥. قدّم إجابة منظّمة وواضحة بنقاط مرقّمة
+٦. اذكر اسم الإجراء في إجابتك
 
-=== المعلومات المتاحة ===
+=== المعلومات المتاحة من قاعدة بيانات الوزارة ===
 {context}
 
 === سؤال المواطن ===
 {question}
 
-=== الإجابة ==="""
+=== الإجابة بالعربية فقط ==="""
 
     try:
         response = client.chat(
             model="llama3:8b",
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 512}
+            options={
+                "temperature": 0.05,
+                "num_predict": 1024,
+            }
         )
         if isinstance(response, dict):
             return response["message"]["content"]
