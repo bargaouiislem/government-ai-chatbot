@@ -231,4 +231,4 @@ def chat(req: ChatRequest):
     context, sources = build_context(results)
     answer = ask_llama(context, query)
 
-    return ChatResponse(response=answer, sources=sources)
+    return ChatResponse(response=answer, sources=[])
