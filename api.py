@@ -198,6 +198,10 @@ def ask_llama(context: str, question: str) -> str:
 def serve_frontend():
     return FileResponse("/app/index1.html")
 
+@app.get("/logo.png")
+def serve_logo():
+    return FileResponse("/app/logo.png", media_type="image/png")
+
 @app.get("/health")
 def health():
     return {
