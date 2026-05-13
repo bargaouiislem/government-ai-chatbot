@@ -83,6 +83,149 @@ for p in procedure_data:
 
 all_documents = []
 
+# -------------------------------------------------------
+# SYNONYM MAP: many ways to ask about the same section
+# This is the KEY FIX for the synonym/paraphrase problem.
+# We generate many QA pairs per section using different
+# Arabic phrasings, so the embedding model can match
+# user queries regardless of which words they use.
+# -------------------------------------------------------
+SYNONYM_QUESTIONS = {
+    "الوثائق المطلوبة": [
+        "ما هي الوثائق المطلوبة لـ {proc}؟",
+        "ما هي الأوراق المطلوبة لـ {proc}؟",
+        "ما هي الملفات الضرورية لـ {proc}؟",
+        "ما هي المستندات اللازمة لـ {proc}؟",
+        "ما هي الأوراق اللي نحتاجها لـ {proc}؟",
+        "شنوا الوثائق المحتاجة لـ {proc}؟",
+        "أش من وثائق نجيب لـ {proc}؟",
+        "ما هي الأوراق الرسمية اللازمة لـ {proc}؟",
+        "ما هي المستندات المطلوبة للحصول على {proc}؟",
+        "ما هي الوثائق الإدارية الضرورية لـ {proc}؟",
+        "ما هي الأوراق التي يجب تقديمها لـ {proc}؟",
+        "ماذا أحضر معي لـ {proc}؟",
+        "ما الذي أحتاجه من وثائق لـ {proc}؟",
+        "قائمة الوثائق اللازمة لـ {proc}",
+        "شنوا الوراق المحتاجة باش نعمل {proc}؟",
+    ],
+    "الشروط الضرورية": [
+        "ما هي شروط {proc}؟",
+        "ما هي الشروط الضرورية لـ {proc}؟",
+        "ما هي متطلبات {proc}؟",
+        "ما هي المتطلبات اللازمة لـ {proc}؟",
+        "ما هي الشروط المطلوبة للحصول على {proc}؟",
+        "ما الشروط الواجب توفرها لـ {proc}؟",
+        "من يحق له التقدم لـ {proc}؟",
+        "من يستطيع التقديم على {proc}؟",
+        "ما شروط الاستفادة من {proc}؟",
+        "ما هي الاشتراطات اللازمة لـ {proc}؟",
+    ],
+    "مراحل إنجاز الإجراء": [
+        "ما هي مراحل {proc}؟",
+        "ما هي خطوات {proc}؟",
+        "كيف أقوم بـ {proc}؟",
+        "كيف يتم {proc}؟",
+        "ما هي إجراءات {proc}؟",
+        "ما هي الإجراءات اللازمة لـ {proc}؟",
+        "كيفاش نعمل {proc}؟",
+        "شنوا خطوات {proc}؟",
+        "كيف أنجز {proc}؟",
+        "ما هي مسيرة إنجاز {proc}؟",
+        "كيف تسير عملية {proc}؟",
+        "ما هو مسار {proc}؟",
+        "اشرح لي كيفية التقديم على {proc}",
+    ],
+    "معلوم الإجراء": [
+        "كم تكلفة {proc}؟",
+        "ما هو معلوم {proc}؟",
+        "ما هو ثمن {proc}؟",
+        "كم يكلف {proc}؟",
+        "ما هو سعر {proc}؟",
+        "ما هو المبلغ المطلوب لـ {proc}؟",
+        "هل {proc} مجاني؟",
+        "كم أدفع لـ {proc}؟",
+        "ما هو الأداء المطلوب لـ {proc}؟",
+        "ما هي رسوم {proc}؟",
+        "كم يساوي {proc}؟",
+        "شقدر تكلفة {proc}؟",
+    ],
+    "المعلوم الثابت": [
+        "كم تكلفة {proc}؟",
+        "ما هو المعلوم الثابت لـ {proc}؟",
+        "ما هو المبلغ الثابت لـ {proc}؟",
+        "ما هي الرسوم الثابتة لـ {proc}؟",
+        "كم يكلف {proc}؟",
+        "ما هو سعر {proc}؟",
+        "ما هي تعريفة {proc}؟",
+    ],
+    "الإجراء بدون معلوم": [
+        "هل {proc} مجاني؟",
+        "هل {proc} بدون رسوم؟",
+        "هل هناك مصاريف لـ {proc}؟",
+        "كم تكلفة {proc}؟",
+        "ما هي رسوم {proc}؟",
+    ],
+    "الجهات المتعهدة بقبول وإسداء الخدمة": [
+        "أين أقدم طلب {proc}؟",
+        "أين أذهب لـ {proc}؟",
+        "في أي مكتب أتقدم لـ {proc}؟",
+        "ما هي الجهة المسؤولة عن {proc}؟",
+        "أين أودع ملف {proc}؟",
+        "أين يمكنني طلب {proc}؟",
+        "ما هو المكان الذي يمكنني فيه تقديم {proc}؟",
+        "ما هي الإدارة المسؤولة عن {proc}؟",
+        "وين نروح باش نطلب {proc}؟",
+        "أين أتوجه لإنجاز {proc}؟",
+        "ما هي الجهات التي تتولى {proc}؟",
+    ],
+    "الهياكل المشرفة على الإنشاء": [
+        "من يشرف على {proc}؟",
+        "ما هي الهيئة المسؤولة عن {proc}؟",
+        "ما هي الجهة المشرفة على {proc}؟",
+        "أين أقدم طلب {proc}؟",
+        "ما هي الإدارة التي تتولى {proc}؟",
+        "أين أتوجه لـ {proc}؟",
+        "من يتولى {proc}؟",
+    ],
+    "آجال إنجاز الإجراء": [
+        "ما هو أجل إنجاز {proc}؟",
+        "كم يستغرق {proc}؟",
+        "ما هي مدة {proc}؟",
+        "كم من الوقت يحتاج {proc}؟",
+        "في كم يوم يتم {proc}؟",
+        "ما هو الوقت اللازم لـ {proc}؟",
+        "ما هو الأجل القانوني لـ {proc}؟",
+        "كم تستغرق معالجة {proc}؟",
+        "قداش يخذ {proc}؟",
+    ],
+    "مدة صلاحية الإجراء": [
+        "ما هي مدة صلاحية {proc}؟",
+        "ما هي صلاحية {proc}؟",
+        "كم تدوم صلاحية {proc}؟",
+        "متى تنتهي صلاحية {proc}؟",
+        "إلى متى يبقى {proc} صالحاً؟",
+        "ما هي مدة سريان {proc}؟",
+    ],
+    "طريقة المتابعة": [
+        "كيف أتابع ملف {proc}؟",
+        "كيف أعرف حالة طلب {proc}؟",
+        "كيف أتابع طلب {proc}؟",
+        "كيفاش نتابع {proc}؟",
+        "ما هي طريقة متابعة {proc}؟",
+        "كيف يمكنني معرفة مآل {proc}؟",
+        "كيف أعرف إذا تمت الموافقة على {proc}؟",
+    ],
+    "المراجع القانونية": [
+        "ما هو الأساس القانوني لـ {proc}؟",
+        "ما هي القوانين المنظمة لـ {proc}؟",
+        "ما هي النصوص القانونية المتعلقة بـ {proc}؟",
+        "ما هو الإطار القانوني لـ {proc}؟",
+        "ما هي المراجع القانونية لـ {proc}؟",
+        "ما هو المرجع التشريعي لـ {proc}؟",
+    ],
+}
+
+
 for proc_name, sections in procedure_data.items():
 
     # Document 1: Full merged document
@@ -107,41 +250,28 @@ for proc_name, sections in procedure_data.items():
             "section": section_label
         })
 
-    # Document 3: Synthetic QA in Arabic only
-    qa_pairs = [
-        (f"ما هي الوثائق المطلوبة لـ {proc_name}؟",
-         sections.get("الوثائق المطلوبة", "")),
-        (f"ما هي شروط {proc_name}؟",
-         sections.get("الشروط الضرورية", "")),
-        (f"ما هي مراحل {proc_name}؟",
-         sections.get("مراحل إنجاز الإجراء", "")),
-        (f"كم تكلفة {proc_name}؟",
-         sections.get("معلوم الإجراء", "") or sections.get("المعلوم الثابت", "") or sections.get("الإجراء بدون معلوم", "")),
-        (f"أين أقدم طلب {proc_name}؟",
-         sections.get("الجهات المتعهدة بقبول وإسداء الخدمة", "") or sections.get("الهياكل المشرفة على الإنشاء", "")),
-        (f"ما هو أجل إنجاز {proc_name}؟",
-         sections.get("آجال إنجاز الإجراء", "")),
-        (f"ما هي مدة صلاحية {proc_name}؟",
-         sections.get("مدة صلاحية الإجراء", "")),
-        (f"كيف أتابع ملف {proc_name}؟",
-         sections.get("طريقة المتابعة", "")),
-        (f"ما هو الأساس القانوني لـ {proc_name}؟",
-         sections.get("المراجع القانونية", "")),
-        (f"من يشرف على {proc_name}؟",
-         sections.get("الهياكل المشرفة على الإنشاء", "")),
-        (f"ما هي الجهات المتعهدة بقبول {proc_name}؟",
-         sections.get("الجهات المتعهدة بقبول وإسداء الخدمة", "")),
-    ]
+    # Document 3: Rich Synonym QA pairs
+    # For every section that has data, we generate ALL synonym questions
+    # so that no matter how the user phrases their query, the embedding
+    # model can find the matching answer.
+    for section_label, question_templates in SYNONYM_QUESTIONS.items():
+        answer = sections.get(section_label, "")
+        # Also check fallback synonyms for cost (معلوم)
+        if not answer and section_label == "معلوم الإجراء":
+            answer = sections.get("المعلوم الثابت", "") or sections.get("الإجراء بدون معلوم", "")
+        if not answer and section_label == "الجهات المتعهدة بقبول وإسداء الخدمة":
+            answer = sections.get("الهياكل المشرفة على الإنشاء", "")
 
-    for question, answer in qa_pairs:
         if answer and answer.strip():
-            qa_text = f"سؤال: {question}\nجواب: {answer}"
-            all_documents.append({
-                "text": qa_text,
-                "source_table": "أسئلة_وأجوبة",
-                "procedure": proc_name,
-                "section": "سؤال وجواب"
-            })
+            for question_template in question_templates:
+                question = question_template.format(proc=proc_name)
+                qa_text = f"سؤال: {question}\nجواب: {answer}"
+                all_documents.append({
+                    "text": qa_text,
+                    "source_table": "أسئلة_وأجوبة",
+                    "procedure": proc_name,
+                    "section": "سؤال وجواب"
+                })
 
 print(f"\n📊 Total documents: {len(all_documents)}")
 

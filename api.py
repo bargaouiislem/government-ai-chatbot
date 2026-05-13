@@ -86,7 +86,11 @@ class ChatResponse(BaseModel):
 # =========================
 # SEARCH
 # =========================
-def search(query: str, top_k: int = 8, threshold: float = 0.20):
+def search(query: str, top_k: int = 10, threshold: float = 0.20):
+    """
+    Search for most relevant documents using cosine similarity.
+    top_k is higher than before to improve recall for synonyms.
+    """
     if model is None or embeddings is None:
         return []
 
@@ -109,11 +113,15 @@ def search(query: str, top_k: int = 8, threshold: float = 0.20):
 # BUILD CONTEXT
 # =========================
 def build_context(filtered_results):
+    """
+    Build a well-structured, complete context from search results.
+    Priority: full procedure documents first, then sections, then QA fallback.
+    """
     seen_procedures = set()
     parts = []
     sources = []
 
-    # Priority: full procedure documents first
+    # Priority 1: full procedure documents
     for idx, score in filtered_results:
         doc = all_docs[idx]
         proc = doc.get("procedure", "")
@@ -126,7 +134,7 @@ def build_context(filtered_results):
             if proc not in sources:
                 sources.append(proc)
 
-    # Then add section docs for uncovered procedures
+    # Priority 2: section docs for procedures not yet covered
     for idx, score in filtered_results:
         doc = all_docs[idx]
         proc = doc.get("procedure", "")
@@ -139,7 +147,21 @@ def build_context(filtered_results):
             if proc not in sources:
                 sources.append(proc)
 
-    # Fallback
+    # Priority 3: QA pairs as supplementary context if no full doc found
+    if not parts:
+        for idx, score in filtered_results:
+            doc = all_docs[idx]
+            proc = doc.get("procedure", "")
+            section = doc.get("section", "")
+            text = doc.get("text", texts[idx])
+
+            if section == "سؤال وجواب" and proc not in seen_procedures:
+                seen_procedures.add(proc)
+                parts.append(f"=== {proc} ===\n{text}")
+                if proc not in sources:
+                    sources.append(proc)
+
+    # Fallback: just take the best result
     if not parts and filtered_results:
         idx, score = filtered_results[0]
         doc = all_docs[idx]
@@ -154,39 +176,65 @@ def build_context(filtered_results):
 def ask_llama(context: str, question: str) -> str:
     context = context[:6000]
 
-    prompt = f"""أنت مساعد إداري متخصص في خدمات وزارة التجارة وتنمية الصادرات التونسية.
+    prompt = f"""أنت مساعد إداري رسمي تابع لوزارة التجارة وتنمية الصادرات التونسية.
+مهمتك الوحيدة هي الإجابة على أسئلة المواطنين بالعربية فقط، بناءً حصراً على المعلومات المقدمة في السياق أدناه.
 
-مهمتك الوحيدة: الإجابة على سؤال المواطن بالعربية فقط، بناءً حصراً على المعلومات المقدمة أدناه.
+══════════════════════════════════════
+قواعد صارمة ومطلقة — لا استثناء:
+══════════════════════════════════════
+١. اللغة: العربية فقط وحصراً في كل كلمة من إجابتك.
+   - ممنوع تماماً استخدام الفرنسية أو الإنجليزية أو أي لغة أخرى (صينية، روسية، إلخ).
+   - حتى لو كان السؤال بلغة أخرى، أجب بالعربية فقط.
+   - إذا وجدت كلمات أجنبية في السياق، ترجمها أو أهملها ولا تعيد كتابتها.
 
-قواعد صارمة يجب احترامها:
-١. أجب بالعربية فقط — لا تستخدم أي لغة أخرى إطلاقاً (لا فرنسية، لا إنجليزية، لا صينية)
-٢. استخدم فقط المعلومات الموجودة في السياق أدناه
-٣. إذا لم تجد المعلومة في السياق، قل فقط: "لا توجد معلومات كافية حول هذا الموضوع"
-٤. لا تخترع أي معلومة ولا تخمّن
-٥. قدّم إجابة منظّمة وواضحة بنقاط مرقّمة
-٦. اذكر اسم الإجراء في إجابتك
+٢. المصدر: استخدم فقط المعلومات الموجودة في السياق أدناه.
+   - لا تخترع أي معلومة.
+   - لا تخمّن أي معلومة غير موجودة في السياق.
+   - إذا لم تجد الإجابة في السياق، قل بالضبط: "لا توجد معلومات كافية حول هذا الموضوع في قاعدة بيانات الوزارة."
 
-=== المعلومات المتاحة من قاعدة بيانات الوزارة ===
+٣. التنظيم: قدّم إجابة منظّمة وواضحة:
+   - ابدأ بذكر اسم الإجراء.
+   - استخدم نقاطاً أو أرقاماً عند الحاجة.
+   - كن دقيقاً وشاملاً، لا تحذف أي معلومة مهمة من السياق.
+
+٤. التعامل مع المرادفات: إذا سأل المواطن عن "الوثائق" أو "الأوراق" أو "المستندات" أو "الملفات" أو "ما يلزم" — فهو يسأل عن نفس الشيء (الوثائق المطلوبة). تصرّف بحسب ذلك.
+
+══════════════════════════════════════
+المعلومات المتاحة من قاعدة بيانات وزارة التجارة وتنمية الصادرات:
+══════════════════════════════════════
 {context}
 
-=== سؤال المواطن ===
+══════════════════════════════════════
+سؤال المواطن:
+══════════════════════════════════════
 {question}
 
-=== الإجابة بالعربية فقط ==="""
+══════════════════════════════════════
+الإجابة (بالعربية فقط، لا تكتب أي حرف بغير العربية):
+══════════════════════════════════════"""
 
     try:
         response = client.chat(
             model="llama3:8b",
             messages=[{"role": "user", "content": prompt}],
             options={
-                "temperature": 0.05,
+                "temperature": 0.0,   # fully deterministic — no hallucination
                 "num_predict": 1024,
             }
         )
         if isinstance(response, dict):
-            return response["message"]["content"]
+            answer = response["message"]["content"]
         else:
-            return response.message.content
+            answer = response.message.content
+
+        # Safety: if the model still slips into non-Arabic, warn the user
+        # (detect by checking if the answer contains Arabic characters at all)
+        arabic_chars = sum(1 for c in answer if '\u0600' <= c <= '\u06FF')
+        if arabic_chars < 10:
+            return "حدث خطأ في معالجة الإجابة. يرجى إعادة صياغة سؤالك بالعربية والمحاولة مجدداً."
+
+        return answer
+
     except Exception as e:
         print(f"⚠️ Ollama error: {e}")
         return "حدث خطأ في الاتصال بالنموذج. يرجى المحاولة مجدداً."
